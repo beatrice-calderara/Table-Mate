@@ -98,7 +98,7 @@ The controller runs only one task at a time. If the destination table is occupie
 
 ## System architecture
 
-```mermaid
+```
 flowchart LR
     GZ[Gazebo Harmonic<br/>world, robot, and sensors]
     C1[Source RGB camera]
