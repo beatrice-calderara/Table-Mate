@@ -4,7 +4,7 @@ Table Mate is a simulated robotic system for visual object recognition and auton
 
 A five-axis robotic arm equipped with a parallel gripper recognizes tableware through overhead RGB cameras, picks selected objects from a source table, arranges them on a dining table, and can later return every object to its initial position.
 
-> Project status: version `1.3.0` — ROS 2 package `cv_arm_table_setting_demo`.
+
 
 ## Table of contents
 
