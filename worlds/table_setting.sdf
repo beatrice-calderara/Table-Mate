@@ -1,0 +1,333 @@
+<?xml version="1.0"?>
+<sdf version="1.10">
+  <world name="arm_table_setting">
+    <gravity>0 0 -9.81</gravity>
+    <physics name="stable" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre</render_engine>
+    </plugin>
+
+    <scene>
+      <ambient>0.58 0.58 0.58 1</ambient>
+      <background>0.80 0.87 0.94 1</background>
+      <shadows>false</shadows>
+      <grid>true</grid>
+    </scene>
+    <light name="sun" type="directional">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 7 0 0 0</pose>
+      <diffuse>0.95 0.95 0.95 1</diffuse>
+      <specular>0.20 0.20 0.20 1</specular>
+      <direction>-0.4 0.3 -1</direction>
+    </light>
+
+    <model name="floor">
+      <static>true</static>
+      <link name="body">
+        <collision name="collision"><pose>0 0 -0.04 0 0 0</pose><geometry><box><size>4.5 4 0.08</size></box></geometry></collision>
+        <visual name="visual"><pose>0 0 -0.04 0 0 0</pose><geometry><box><size>4.5 4 0.08</size></box></geometry><material><ambient>0.32 0.35 0.38 1</ambient><diffuse>0.42 0.45 0.48 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <!-- Fixed RGB camera used by the image-based perception node. Gazebo
+         cameras look along local +X; pitch +90 degrees points it downwards. -->
+    <model name="overhead_camera">
+      <static>true</static>
+      <pose>-0.70 0 2.45 0 1.57079632679 0</pose>
+      <link name="camera_link">
+        <sensor name="rgb_sensor" type="camera">
+          <always_on>true</always_on>
+          <update_rate>5</update_rate>
+          <topic>/table_setting/camera/image</topic>
+          <camera>
+            <horizontal_fov>1.0</horizontal_fov>
+            <image>
+              <width>640</width>
+              <height>480</height>
+              <format>R8G8B8</format>
+            </image>
+            <clip><near>0.05</near><far>5.0</far></clip>
+          </camera>
+        </sensor>
+      </link>
+    </model>
+
+    <!-- Second RGB camera dedicated to the destination table. It estimates
+         the real settled poses used by clean table. -->
+    <model name="destination_overhead_camera">
+      <static>true</static>
+      <pose>0.70 0 2.45 0 1.57079632679 0</pose>
+      <link name="camera_link">
+        <sensor name="rgb_sensor" type="camera">
+          <always_on>true</always_on>
+          <update_rate>5</update_rate>
+          <topic>/table_setting/destination_camera/image</topic>
+          <camera>
+            <horizontal_fov>1.0</horizontal_fov>
+            <image>
+              <width>640</width>
+              <height>480</height>
+              <format>R8G8B8</format>
+            </image>
+            <clip><near>0.05</near><far>5.0</far></clip>
+          </camera>
+        </sensor>
+      </link>
+    </model>
+
+    <model name="source_table">
+      <static>true</static><pose>-0.70 0 0 0 0 0</pose>
+      <link name="body">
+        <collision name="top"><pose>0 0 0.71 0 0 0</pose><geometry><box><size>1.10 1.40 0.08</size></box></geometry></collision>
+        <visual name="top"><pose>0 0 0.71 0 0 0</pose><geometry><box><size>1.10 1.40 0.08</size></box></geometry><material><ambient>0.34 0.16 0.06 1</ambient><diffuse>0.58 0.29 0.10 1</diffuse></material></visual>
+        <collision name="legs"><pose>0 0 0.34 0 0 0</pose><geometry><box><size>0.82 1.12 0.68</size></box></geometry></collision>
+        <visual name="legs"><pose>0 0 0.34 0 0 0</pose><geometry><box><size>0.82 1.12 0.68</size></box></geometry><material><ambient>0.18 0.08 0.03 1</ambient><diffuse>0.26 0.12 0.04 1</diffuse></material></visual>
+      </link>
+      <!-- Source-table locks keep every waiting object immobile. The
+           controller releases only the object already secured by the arm. -->
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>glass</child_model><child_link>body</child_link><attach_topic>/table_setting/source_hold/glass/attach</attach_topic><detach_topic>/table_setting/source_hold/glass/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>wine_glass</child_model><child_link>body</child_link><attach_topic>/table_setting/source_hold/wine_glass/attach</attach_topic><detach_topic>/table_setting/source_hold/wine_glass/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>plate</child_model><child_link>body</child_link><attach_topic>/table_setting/source_hold/plate/attach</attach_topic><detach_topic>/table_setting/source_hold/plate/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>cup</child_model><child_link>body</child_link><attach_topic>/table_setting/source_hold/cup/attach</attach_topic><detach_topic>/table_setting/source_hold/cup/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>spoon</child_model><child_link>body</child_link><attach_topic>/table_setting/source_hold/spoon/attach</attach_topic><detach_topic>/table_setting/source_hold/spoon/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>fork</child_model><child_link>body</child_link><attach_topic>/table_setting/source_hold/fork/attach</attach_topic><detach_topic>/table_setting/source_hold/fork/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>knife</child_model><child_link>body</child_link><attach_topic>/table_setting/source_hold/knife/attach</attach_topic><detach_topic>/table_setting/source_hold/knife/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>bottle</child_model><child_link>body</child_link><attach_topic>/table_setting/source_hold/bottle/attach</attach_topic><detach_topic>/table_setting/source_hold/bottle/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>bowl</child_model><child_link>body</child_link><attach_topic>/table_setting/source_hold/bowl/attach</attach_topic><detach_topic>/table_setting/source_hold/bowl/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>napkin</child_model><child_link>body</child_link><attach_topic>/table_setting/source_hold/napkin/attach</attach_topic><detach_topic>/table_setting/source_hold/napkin/detach</detach_topic></plugin>
+    </model>
+
+    <model name="destination_table">
+      <static>true</static><pose>0.70 0 0 0 0 0</pose>
+      <link name="body">
+        <collision name="top"><pose>0 0 0.71 0 0 0</pose><geometry><box><size>1.10 1.40 0.08</size></box></geometry></collision>
+        <visual name="top"><pose>0 0 0.71 0 0 0</pose><geometry><box><size>1.10 1.40 0.08</size></box></geometry><material><ambient>0.51 0.29 0.12 1</ambient><diffuse>0.72 0.44 0.21 1</diffuse></material></visual>
+        <collision name="legs"><pose>0 0 0.34 0 0 0</pose><geometry><box><size>0.82 1.12 0.68</size></box></geometry></collision>
+        <visual name="legs"><pose>0 0 0.34 0 0 0</pose><geometry><box><size>0.82 1.12 0.68</size></box></geometry><material><ambient>0.20 0.10 0.04 1</ambient><diffuse>0.31 0.16 0.06 1</diffuse></material></visual>
+        <!-- The placemat has both visual and collision geometry. Its upper
+             surface is z=0.760, preventing objects from sinking visually. -->
+        <collision name="placemat"><pose>0 0 0.756 0 0 0</pose><geometry><box><size>0.86 1.00 0.008</size></box></geometry></collision>
+        <visual name="placemat"><pose>0 0 0.756 0 0 0</pose><geometry><box><size>0.86 1.00 0.008</size></box></geometry><material><ambient>0.45 0.03 0.16 1</ambient><diffuse>0.72 0.06 0.25 1</diffuse></material></visual>
+      </link>
+      <!-- Destination-table locks engage immediately after release so placed
+           objects cannot slide, rotate or be hit by a later motion. -->
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>glass</child_model><child_link>body</child_link><attach_topic>/table_setting/destination_hold/glass/attach</attach_topic><detach_topic>/table_setting/destination_hold/glass/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>wine_glass</child_model><child_link>body</child_link><attach_topic>/table_setting/destination_hold/wine_glass/attach</attach_topic><detach_topic>/table_setting/destination_hold/wine_glass/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>plate</child_model><child_link>body</child_link><attach_topic>/table_setting/destination_hold/plate/attach</attach_topic><detach_topic>/table_setting/destination_hold/plate/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>cup</child_model><child_link>body</child_link><attach_topic>/table_setting/destination_hold/cup/attach</attach_topic><detach_topic>/table_setting/destination_hold/cup/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>spoon</child_model><child_link>body</child_link><attach_topic>/table_setting/destination_hold/spoon/attach</attach_topic><detach_topic>/table_setting/destination_hold/spoon/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>fork</child_model><child_link>body</child_link><attach_topic>/table_setting/destination_hold/fork/attach</attach_topic><detach_topic>/table_setting/destination_hold/fork/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>knife</child_model><child_link>body</child_link><attach_topic>/table_setting/destination_hold/knife/attach</attach_topic><detach_topic>/table_setting/destination_hold/knife/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>bottle</child_model><child_link>body</child_link><attach_topic>/table_setting/destination_hold/bottle/attach</attach_topic><detach_topic>/table_setting/destination_hold/bottle/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>bowl</child_model><child_link>body</child_link><attach_topic>/table_setting/destination_hold/bowl/attach</attach_topic><detach_topic>/table_setting/destination_hold/bowl/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>body</parent_link><child_model>napkin</child_model><child_link>body</child_link><attach_topic>/table_setting/destination_hold/napkin/attach</attach_topic><detach_topic>/table_setting/destination_hold/napkin/detach</detach_topic></plugin>
+    </model>
+
+    <!-- Chair on the side opposite the robot. Its back is on +X, so a seated
+         person faces the destination table in the -X direction. -->
+    <model name="dining_chair">
+      <static>true</static><pose>1.52 0 0 0 0 0</pose>
+      <link name="body">
+        <collision name="seat"><pose>0 0 0.47 0 0 0</pose><geometry><box><size>0.48 0.50 0.08</size></box></geometry></collision>
+        <visual name="seat"><pose>0 0 0.47 0 0 0</pose><geometry><box><size>0.48 0.50 0.08</size></box></geometry><material><ambient>0.24 0.12 0.05 1</ambient><diffuse>0.48 0.25 0.10 1</diffuse></material></visual>
+        <collision name="back"><pose>0.22 0 0.78 0 0 0</pose><geometry><box><size>0.08 0.50 0.62</size></box></geometry></collision>
+        <visual name="back"><pose>0.22 0 0.78 0 0 0</pose><geometry><box><size>0.08 0.50 0.62</size></box></geometry><material><ambient>0.24 0.12 0.05 1</ambient><diffuse>0.48 0.25 0.10 1</diffuse></material></visual>
+        <collision name="front_left_leg"><pose>-0.17 0.19 0.225 0 0 0</pose><geometry><box><size>0.06 0.06 0.45</size></box></geometry></collision>
+        <visual name="front_left_leg"><pose>-0.17 0.19 0.225 0 0 0</pose><geometry><box><size>0.06 0.06 0.45</size></box></geometry><material><ambient>0.16 0.08 0.03 1</ambient><diffuse>0.34 0.17 0.06 1</diffuse></material></visual>
+        <collision name="front_right_leg"><pose>-0.17 -0.19 0.225 0 0 0</pose><geometry><box><size>0.06 0.06 0.45</size></box></geometry></collision>
+        <visual name="front_right_leg"><pose>-0.17 -0.19 0.225 0 0 0</pose><geometry><box><size>0.06 0.06 0.45</size></box></geometry><material><ambient>0.16 0.08 0.03 1</ambient><diffuse>0.34 0.17 0.06 1</diffuse></material></visual>
+        <collision name="back_left_leg"><pose>0.17 0.19 0.225 0 0 0</pose><geometry><box><size>0.06 0.06 0.45</size></box></geometry></collision>
+        <visual name="back_left_leg"><pose>0.17 0.19 0.225 0 0 0</pose><geometry><box><size>0.06 0.06 0.45</size></box></geometry><material><ambient>0.16 0.08 0.03 1</ambient><diffuse>0.34 0.17 0.06 1</diffuse></material></visual>
+        <collision name="back_right_leg"><pose>0.17 -0.19 0.225 0 0 0</pose><geometry><box><size>0.06 0.06 0.45</size></box></geometry></collision>
+        <visual name="back_right_leg"><pose>0.17 -0.19 0.225 0 0 0</pose><geometry><box><size>0.06 0.06 0.45</size></box></geometry><material><ambient>0.16 0.08 0.03 1</ambient><diffuse>0.34 0.17 0.06 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <!-- Three additional objects recognized by computer vision. They do not
+         belong to a fixed meal recipe, but can be requested by name. -->
+    <model name="bottle"><pose>-0.34 -0.30 0.825 0 0 0</pose><link name="body">
+      <inertial><mass>0.25</mass><inertia><ixx>0.0012</ixx><iyy>0.0012</iyy><izz>0.0004</izz></inertia></inertial>
+      <collision name="collision"><geometry><cylinder><radius>0.040</radius><length>0.15</length></cylinder></geometry></collision>
+      <visual name="body"><pose>0 0 -0.006 0 0 0</pose><geometry><cylinder><radius>0.040</radius><length>0.138</length></cylinder></geometry><material><ambient>0.08 0.40 0.12 1</ambient><diffuse>0.18 0.62 0.22 1</diffuse></material></visual>
+      <visual name="cap"><pose>0 0 0.069 0 0 0</pose><geometry><cylinder><radius>0.025</radius><length>0.012</length></cylinder></geometry><material><ambient>0.04 0.18 0.06 1</ambient><diffuse>0.08 0.30 0.10 1</diffuse></material></visual>
+    </link></model>
+
+    <model name="bowl"><pose>-0.63 -0.30 0.790 0 0 0</pose><link name="body">
+      <inertial><mass>0.20</mass><inertia><ixx>0.00045</ixx><iyy>0.00045</iyy><izz>0.00065</izz></inertia></inertial>
+      <collision name="collision"><geometry><cylinder><radius>0.075</radius><length>0.08</length></cylinder></geometry></collision>
+      <visual name="outer"><geometry><cylinder><radius>0.075</radius><length>0.08</length></cylinder></geometry><material><ambient>0.75 0.25 0.06 1</ambient><diffuse>0.92 0.40 0.10 1</diffuse></material></visual>
+      <visual name="inside"><pose>0 0 0.041 0 0 0</pose><geometry><cylinder><radius>0.058</radius><length>0.004</length></cylinder></geometry><material><ambient>0.98 0.66 0.35 1</ambient><diffuse>1.0 0.72 0.40 1</diffuse></material></visual>
+    </link></model>
+
+    <model name="napkin"><pose>-0.90 -0.30 0.756 0 0 0.08</pose><link name="body">
+      <inertial><mass>0.08</mass><inertia><ixx>0.00010</ixx><iyy>0.00010</iyy><izz>0.00018</izz></inertia></inertial>
+      <collision name="collision"><geometry><box><size>0.12 0.12 0.012</size></box></geometry></collision>
+      <visual name="fabric"><geometry><box><size>0.12 0.12 0.012</size></box></geometry><material><ambient>0.50 0.16 0.48 1</ambient><diffuse>0.70 0.32 0.68 1</diffuse></material></visual>
+      <visual name="fold"><pose>0 0 0.007 0 0 0</pose><geometry><box><size>0.105 0.008 0.003</size></box></geometry><material><ambient>0.72 0.38 0.70 1</ambient><diffuse>0.86 0.55 0.84 1</diffuse></material></visual>
+    </link></model>
+
+    <!-- Seven task-relevant dynamic table objects. -->
+    <model name="glass"><pose>-1.00 0.00 0.825 0 0 0</pose><link name="body">
+      <inertial><mass>0.12</mass><inertia><ixx>0.0003</ixx><iyy>0.0003</iyy><izz>0.0002</izz></inertia></inertial>
+      <collision name="collision"><geometry><cylinder><radius>0.0375</radius><length>0.15</length></cylinder></geometry></collision>
+      <visual name="glass"><geometry><cylinder><radius>0.0375</radius><length>0.15</length></cylinder></geometry><material><ambient>0.30 0.72 0.94 0.72</ambient><diffuse>0.30 0.72 0.94 0.72</diffuse></material></visual>
+      <visual name="rim"><pose>0 0 0.075 0 0 0</pose><geometry><cylinder><radius>0.042</radius><length>0.004</length></cylinder></geometry><material><ambient>0.75 0.95 1 1</ambient><diffuse>0.75 0.95 1 1</diffuse></material></visual>
+    </link></model>
+
+    <model name="wine_glass"><pose>-0.68 0.00 0.860 0 0 0</pose><link name="body">
+      <inertial><mass>0.16</mass><inertia><ixx>0.0007</ixx><iyy>0.0007</iyy><izz>0.0003</izz></inertia></inertial>
+      <!-- Primitive collision proxy keeps the tall glass stable with ODE. -->
+      <collision name="collision"><geometry><cylinder><radius>0.045</radius><length>0.22</length></cylinder></geometry></collision>
+      <visual name="base"><pose>0 0 -0.106 0 0 0</pose><geometry><cylinder><radius>0.055</radius><length>0.008</length></cylinder></geometry><material><ambient>0.55 0.78 0.94 0.78</ambient><diffuse>0.55 0.78 0.94 0.78</diffuse></material></visual>
+      <visual name="stem"><pose>0 0 -0.050 0 0 0</pose><geometry><cylinder><radius>0.008</radius><length>0.105</length></cylinder></geometry><material><ambient>0.55 0.78 0.94 0.78</ambient><diffuse>0.55 0.78 0.94 0.78</diffuse></material></visual>
+      <visual name="cup"><pose>0 0 0.055 0 0 0</pose><geometry><cylinder><radius>0.045</radius><length>0.11</length></cylinder></geometry><material><ambient>0.45 0.67 0.90 0.62</ambient><diffuse>0.45 0.67 0.90 0.62</diffuse></material></visual>
+      <visual name="rim"><pose>0 0 0.110 0 0 0</pose><geometry><cylinder><radius>0.049</radius><length>0.004</length></cylinder></geometry><material><ambient>0.78 0.93 1 1</ambient><diffuse>0.78 0.93 1 1</diffuse></material></visual>
+    </link></model>
+
+    <model name="plate"><pose>-0.70 0.26 0.765 0 0 0</pose><link name="body">
+      <inertial><mass>0.28</mass><inertia><ixx>0.0007</ixx><iyy>0.0007</iyy><izz>0.0013</izz></inertia></inertial>
+      <!-- Slightly smaller collision rim gives the parallel fingers a stable,
+           visible edge grasp while preserving the 22 cm rendered plate. -->
+      <collision name="collision"><geometry><cylinder><radius>0.10</radius><length>0.03</length></cylinder></geometry></collision>
+      <visual name="plate"><geometry><cylinder><radius>0.11</radius><length>0.03</length></cylinder></geometry><material><ambient>0.92 0.92 0.88 1</ambient><diffuse>0.98 0.98 0.94 1</diffuse></material></visual>
+      <visual name="inside"><pose>0 0 0.016 0 0 0</pose><geometry><cylinder><radius>0.077</radius><length>0.004</length></cylinder></geometry><material><ambient>0.70 0.84 0.91 1</ambient><diffuse>0.70 0.84 0.91 1</diffuse></material></visual>
+    </link></model>
+
+    <model name="cup"><pose>-0.36 0.00 0.810 0 0 0</pose><link name="body">
+      <inertial><mass>0.18</mass><inertia><ixx>0.00035</ixx><iyy>0.00035</iyy><izz>0.00025</izz></inertia></inertial>
+      <!-- Stable primitive proxies: mug body plus its handle. -->
+      <collision name="body_collision"><geometry><cylinder><radius>0.055</radius><length>0.12</length></cylinder></geometry></collision>
+      <collision name="handle_collision"><pose>0 -0.072 0 0 0 0</pose><geometry><box><size>0.035 0.045 0.035</size></box></geometry></collision>
+      <visual name="outer"><geometry><cylinder><radius>0.055</radius><length>0.12</length></cylinder></geometry><material><ambient>0.20 0.62 0.76 1</ambient><diffuse>0.24 0.72 0.86 1</diffuse></material></visual>
+      <visual name="rim"><pose>0 0 0.061 0 0 0</pose><geometry><cylinder><radius>0.059</radius><length>0.006</length></cylinder></geometry><material><ambient>0.82 0.95 0.98 1</ambient><diffuse>0.82 0.95 0.98 1</diffuse></material></visual>
+      <visual name="handle"><pose>0 -0.072 0 0 0 0</pose><geometry><box><size>0.035 0.045 0.035</size></box></geometry><material><ambient>0.20 0.62 0.76 1</ambient><diffuse>0.24 0.72 0.86 1</diffuse></material></visual>
+    </link></model>
+
+    <model name="spoon"><pose>-0.44 0.50 0.765 0 0 0</pose><link name="body">
+      <inertial><mass>0.055</mass><inertia><ixx>0.00018</ixx><iyy>0.00002</iyy><izz>0.00018</izz></inertia></inertial>
+      <collision name="handle"><pose>0.025 0 0 0 0 0</pose><geometry><box><size>0.13 0.018 0.025</size></box></geometry></collision>
+      <!-- Flat primitive proxy: unlike a sphere it cannot roll after release;
+           the rendered spoon head remains ellipsoidal. -->
+      <collision name="head"><pose>-0.065 0 0 0 0 0</pose><geometry><box><size>0.070 0.048 0.025</size></box></geometry></collision>
+      <visual name="handle"><pose>0.025 0 0 0 0 0</pose><geometry><box><size>0.13 0.018 0.025</size></box></geometry><material><ambient>0.67 0.70 0.74 1</ambient><diffuse>0.84 0.87 0.90 1</diffuse></material></visual>
+      <visual name="head"><pose>-0.065 0 0 0 0 0</pose><geometry><ellipsoid><radii>0.035 0.024 0.015</radii></ellipsoid></geometry><material><ambient>0.67 0.70 0.74 1</ambient><diffuse>0.84 0.87 0.90 1</diffuse></material></visual>
+    </link></model>
+
+    <model name="fork"><pose>-0.74 0.50 0.765 0 0 0</pose><link name="body">
+      <inertial><mass>0.06</mass><inertia><ixx>0.00019</ixx><iyy>0.00002</iyy><izz>0.00019</izz></inertia></inertial>
+      <collision name="handle"><pose>0.025 0 0 0 0 0</pose><geometry><box><size>0.14 0.018 0.025</size></box></geometry></collision>
+      <collision name="head"><pose>-0.072 0 0 0 0 0</pose><geometry><box><size>0.055 0.045 0.025</size></box></geometry></collision>
+      <visual name="handle"><pose>0.025 0 0 0 0 0</pose><geometry><box><size>0.14 0.018 0.025</size></box></geometry><material><ambient>0.65 0.68 0.72 1</ambient><diffuse>0.83 0.86 0.89 1</diffuse></material></visual>
+      <!-- The head overlaps the handle by 1 mm so the RGB segmentation sees
+           one connected fork contour instead of two independent objects. -->
+      <visual name="head"><pose>-0.069 0 0 0 0 0</pose><geometry><box><size>0.050 0.045 0.025</size></box></geometry><material><ambient>0.65 0.68 0.72 1</ambient><diffuse>0.83 0.86 0.89 1</diffuse></material></visual>
+    </link></model>
+
+    <model name="knife"><pose>-1.06 0.50 0.765 0 0 0</pose><link name="body">
+      <inertial><mass>0.075</mass><inertia><ixx>0.00022</ixx><iyy>0.000025</iyy><izz>0.00022</izz></inertia></inertial>
+      <collision name="handle"><pose>0.055 0 0 0 0 0</pose><geometry><box><size>0.09 0.035 0.03</size></box></geometry></collision>
+      <collision name="blade"><pose>-0.045 0 0 0 0 0</pose><geometry><box><size>0.11 0.028 0.018</size></box></geometry></collision>
+      <visual name="handle"><pose>0.055 0 0 0 0 0</pose><geometry><box><size>0.09 0.035 0.03</size></box></geometry><material><ambient>0.10 0.11 0.12 1</ambient><diffuse>0.18 0.19 0.21 1</diffuse></material></visual>
+      <visual name="blade"><pose>-0.045 0 0 0 0 0</pose><geometry><box><size>0.11 0.028 0.018</size></box></geometry><material><ambient>0.68 0.71 0.75 1</ambient><diffuse>0.88 0.91 0.94 1</diffuse></material></visual>
+    </link></model>
+
+    <!-- Four-axis articulated arm with a two-finger parallel gripper. -->
+    <model name="table_setting_arm"><pose>0 0.55 0 0 0 0</pose><self_collide>false</self_collide>
+      <link name="base">
+        <inertial><mass>35</mass><inertia><ixx>3</ixx><iyy>3</iyy><izz>3</izz></inertia></inertial>
+        <collision name="pedestal"><pose>0 0 0.50 0 0 0</pose><geometry><cylinder><radius>0.16</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="pedestal"><pose>0 0 0.50 0 0 0</pose><geometry><cylinder><radius>0.16</radius><length>1.0</length></cylinder></geometry><material><ambient>0.08 0.11 0.15 1</ambient><diffuse>0.13 0.18 0.24 1</diffuse></material></visual>
+        <visual name="foot"><pose>0 0 0.06 0 0 0</pose><geometry><cylinder><radius>0.25</radius><length>0.12</length></cylinder></geometry><material><ambient>0.06 0.08 0.11 1</ambient><diffuse>0.10 0.13 0.17 1</diffuse></material></visual>
+      </link>
+      <link name="turret"><pose>0 0 1.05 0 0 0</pose>
+        <inertial><mass>6</mass><inertia><ixx>0.12</ixx><iyy>0.12</iyy><izz>0.12</izz></inertia></inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.12</radius><length>0.18</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.12</radius><length>0.18</length></cylinder></geometry><material><ambient>0.10 0.32 0.61 1</ambient><diffuse>0.12 0.43 0.82 1</diffuse></material></visual>
+      </link>
+      <link name="upper_arm"><pose relative_to="turret">0 0 0 0 0 0</pose>
+        <inertial><pose>0.34 0 0 0 0 0</pose><mass>5</mass><inertia><ixx>0.07</ixx><iyy>0.20</iyy><izz>0.20</izz></inertia></inertial>
+        <collision name="collision"><pose>0.34 0 0 0 1.5708 0</pose><geometry><cylinder><radius>0.065</radius><length>0.68</length></cylinder></geometry></collision>
+        <visual name="arm"><pose>0.34 0 0 0 1.5708 0</pose><geometry><cylinder><radius>0.065</radius><length>0.68</length></cylinder></geometry><material><ambient>0.92 0.42 0.05 1</ambient><diffuse>1.0 0.53 0.06 1</diffuse></material></visual>
+        <visual name="shoulder"><geometry><sphere><radius>0.105</radius></sphere></geometry><material><ambient>0.10 0.32 0.61 1</ambient><diffuse>0.12 0.43 0.82 1</diffuse></material></visual>
+      </link>
+      <link name="forearm"><pose relative_to="upper_arm">0.68 0 0 0 0 0</pose>
+        <inertial><pose>0.31 0 0 0 0 0</pose><mass>3.5</mass><inertia><ixx>0.05</ixx><iyy>0.14</iyy><izz>0.14</izz></inertia></inertial>
+        <collision name="collision"><pose>0.31 0 0 0 1.5708 0</pose><geometry><cylinder><radius>0.052</radius><length>0.62</length></cylinder></geometry></collision>
+        <visual name="arm"><pose>0.31 0 0 0 1.5708 0</pose><geometry><cylinder><radius>0.052</radius><length>0.62</length></cylinder></geometry><material><ambient>0.93 0.46 0.06 1</ambient><diffuse>1.0 0.58 0.08 1</diffuse></material></visual>
+        <visual name="elbow"><geometry><sphere><radius>0.085</radius></sphere></geometry><material><ambient>0.10 0.32 0.61 1</ambient><diffuse>0.12 0.43 0.82 1</diffuse></material></visual>
+      </link>
+      <link name="wrist"><pose relative_to="forearm">0.62 0 0 0 0 0</pose>
+        <inertial><mass>1.2</mass><inertia><ixx>0.025</ixx><iyy>0.025</iyy><izz>0.025</izz></inertia></inertial>
+        <collision name="collision"><geometry><sphere><radius>0.07</radius></sphere></geometry></collision>
+        <visual name="joint"><geometry><sphere><radius>0.075</radius></sphere></geometry><material><ambient>0.10 0.32 0.61 1</ambient><diffuse>0.12 0.43 0.82 1</diffuse></material></visual>
+        <visual name="connector"><pose>0.08 0 0 0 1.5708 0</pose><geometry><cylinder><radius>0.035</radius><length>0.16</length></cylinder></geometry><material><ambient>0.16 0.18 0.21 1</ambient><diffuse>0.24 0.27 0.31 1</diffuse></material></visual>
+      </link>
+      <link name="gripper_palm"><pose relative_to="wrist">0.16 0 0 0 0 0</pose>
+        <inertial><mass>0.8</mass><inertia><ixx>0.012</ixx><iyy>0.012</iyy><izz>0.012</izz></inertia></inertial>
+        <!-- Wide carriage: at maximum opening both sliding fingers still
+             overlap the palm visually instead of appearing detached. -->
+        <collision name="collision"><pose>-0.035 0 0 0 0 0</pose><geometry><box><size>0.07 0.30 0.09</size></box></geometry></collision>
+        <visual name="palm"><pose>-0.035 0 0 0 0 0</pose><geometry><box><size>0.07 0.30 0.09</size></box></geometry><material><ambient>0.15 0.17 0.19 1</ambient><diffuse>0.25 0.28 0.32 1</diffuse></material></visual>
+      </link>
+      <link name="left_finger"><pose relative_to="gripper_palm">0 0.012 0 0 0 0</pose>
+        <inertial><mass>0.12</mass><inertia><ixx>0.001</ixx><iyy>0.001</iyy><izz>0.001</izz></inertia></inertial>
+        <collision name="collision"><pose>0.055 0 0 0 0 0</pose><geometry><box><size>0.14 0.024 0.025</size></box></geometry></collision>
+        <visual name="finger"><pose>0.055 0 0 0 0 0</pose><geometry><box><size>0.14 0.024 0.025</size></box></geometry><material><ambient>0.08 0.09 0.10 1</ambient><diffuse>0.14 0.15 0.17 1</diffuse></material></visual>
+      </link>
+      <link name="right_finger"><pose relative_to="gripper_palm">0 -0.012 0 0 0 0</pose>
+        <inertial><mass>0.12</mass><inertia><ixx>0.001</ixx><iyy>0.001</iyy><izz>0.001</izz></inertia></inertial>
+        <collision name="collision"><pose>0.055 0 0 0 0 0</pose><geometry><box><size>0.14 0.024 0.025</size></box></geometry></collision>
+        <visual name="finger"><pose>0.055 0 0 0 0 0</pose><geometry><box><size>0.14 0.024 0.025</size></box></geometry><material><ambient>0.08 0.09 0.10 1</ambient><diffuse>0.14 0.15 0.17 1</diffuse></material></visual>
+      </link>
+
+      <joint name="base_world" type="fixed"><parent>world</parent><child>base</child></joint>
+      <joint name="base_yaw" type="revolute"><parent>base</parent><child>turret</child><pose relative_to="turret">0 0 0 0 0 0</pose><axis><xyz>0 0 1</xyz><limit><lower>-3.14</lower><upper>3.14</upper><effort>800</effort><velocity>1.2</velocity></limit><dynamics><damping>18</damping></dynamics></axis></joint>
+      <joint name="shoulder_pitch" type="revolute"><parent>turret</parent><child>upper_arm</child><pose relative_to="upper_arm">0 0 0 0 0 0</pose><axis><xyz>0 1 0</xyz><limit><lower>-1.8</lower><upper>1.2</upper><effort>900</effort><velocity>1.0</velocity></limit><dynamics><damping>20</damping></dynamics></axis></joint>
+      <joint name="elbow_pitch" type="revolute"><parent>upper_arm</parent><child>forearm</child><pose relative_to="forearm">0 0 0 0 0 0</pose><axis><xyz>0 1 0</xyz><limit><lower>0.05</lower><upper>2.75</upper><effort>650</effort><velocity>1.2</velocity></limit><dynamics><damping>16</damping></dynamics></axis></joint>
+      <joint name="wrist_pitch" type="revolute"><parent>forearm</parent><child>wrist</child><pose relative_to="wrist">0 0 0 0 0 0</pose><axis><xyz>0 1 0</xyz><limit><lower>-2.9</lower><upper>2.9</upper><effort>300</effort><velocity>1.5</velocity></limit><dynamics><damping>10</damping></dynamics></axis></joint>
+      <joint name="gripper_roll" type="revolute"><parent>wrist</parent><child>gripper_palm</child><pose relative_to="gripper_palm">0 0 0 0 0 0</pose><axis><xyz>1 0 0</xyz><limit><lower>-3.14</lower><upper>3.14</upper><effort>180</effort><velocity>1.5</velocity></limit><dynamics><damping>8</damping></dynamics></axis></joint>
+      <joint name="left_finger_joint" type="prismatic"><parent>gripper_palm</parent><child>left_finger</child><pose relative_to="left_finger">0 0 0 0 0 0</pose><axis><xyz>0 1 0</xyz><limit><lower>0</lower><upper>0.11</upper><effort>120</effort><velocity>0.25</velocity></limit><dynamics><damping>8</damping></dynamics></axis></joint>
+      <joint name="right_finger_joint" type="prismatic"><parent>gripper_palm</parent><child>right_finger</child><pose relative_to="right_finger">0 0 0 0 0 0</pose><axis><xyz>0 -1 0</xyz><limit><lower>0</lower><upper>0.11</upper><effort>120</effort><velocity>0.25</velocity></limit><dynamics><damping>8</damping></dynamics></axis></joint>
+
+      <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController"><joint_name>base_yaw</joint_name><topic>/table_setting/joint/base_yaw</topic><p_gain>500</p_gain><d_gain>55</d_gain><cmd_max>750</cmd_max><cmd_min>-750</cmd_min></plugin>
+      <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController"><joint_name>shoulder_pitch</joint_name><topic>/table_setting/joint/shoulder_pitch</topic><p_gain>650</p_gain><d_gain>70</d_gain><cmd_max>850</cmd_max><cmd_min>-850</cmd_min></plugin>
+      <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController"><joint_name>elbow_pitch</joint_name><topic>/table_setting/joint/elbow_pitch</topic><p_gain>520</p_gain><d_gain>55</d_gain><cmd_max>620</cmd_max><cmd_min>-620</cmd_min></plugin>
+      <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController"><joint_name>wrist_pitch</joint_name><topic>/table_setting/joint/wrist_pitch</topic><p_gain>300</p_gain><d_gain>32</d_gain><cmd_max>280</cmd_max><cmd_min>-280</cmd_min></plugin>
+      <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController"><joint_name>gripper_roll</joint_name><topic>/table_setting/joint/gripper_roll</topic><p_gain>260</p_gain><d_gain>28</d_gain><cmd_max>170</cmd_max><cmd_min>-170</cmd_min></plugin>
+      <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController"><joint_name>left_finger_joint</joint_name><topic>/table_setting/joint/left_finger</topic><p_gain>450</p_gain><d_gain>20</d_gain><cmd_max>110</cmd_max><cmd_min>-110</cmd_min></plugin>
+      <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController"><joint_name>right_finger_joint</joint_name><topic>/table_setting/joint/right_finger</topic><p_gain>450</p_gain><d_gain>20</d_gain><cmd_max>110</cmd_max><cmd_min>-110</cmd_min></plugin>
+
+      <!-- The fixed grasp constraint is activated only after the fingers close. -->
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>gripper_palm</parent_link><child_model>glass</child_model><child_link>body</child_link><attach_topic>/table_setting/grip/glass/attach</attach_topic><detach_topic>/table_setting/grip/glass/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>gripper_palm</parent_link><child_model>wine_glass</child_model><child_link>body</child_link><attach_topic>/table_setting/grip/wine_glass/attach</attach_topic><detach_topic>/table_setting/grip/wine_glass/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>gripper_palm</parent_link><child_model>plate</child_model><child_link>body</child_link><attach_topic>/table_setting/grip/plate/attach</attach_topic><detach_topic>/table_setting/grip/plate/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>gripper_palm</parent_link><child_model>cup</child_model><child_link>body</child_link><attach_topic>/table_setting/grip/cup/attach</attach_topic><detach_topic>/table_setting/grip/cup/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>gripper_palm</parent_link><child_model>spoon</child_model><child_link>body</child_link><attach_topic>/table_setting/grip/spoon/attach</attach_topic><detach_topic>/table_setting/grip/spoon/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>gripper_palm</parent_link><child_model>fork</child_model><child_link>body</child_link><attach_topic>/table_setting/grip/fork/attach</attach_topic><detach_topic>/table_setting/grip/fork/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>gripper_palm</parent_link><child_model>knife</child_model><child_link>body</child_link><attach_topic>/table_setting/grip/knife/attach</attach_topic><detach_topic>/table_setting/grip/knife/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>gripper_palm</parent_link><child_model>bottle</child_model><child_link>body</child_link><attach_topic>/table_setting/grip/bottle/attach</attach_topic><detach_topic>/table_setting/grip/bottle/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>gripper_palm</parent_link><child_model>bowl</child_model><child_link>body</child_link><attach_topic>/table_setting/grip/bowl/attach</attach_topic><detach_topic>/table_setting/grip/bowl/detach</detach_topic></plugin>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint"><parent_link>gripper_palm</parent_link><child_model>napkin</child_model><child_link>body</child_link><attach_topic>/table_setting/grip/napkin/attach</attach_topic><detach_topic>/table_setting/grip/napkin/detach</detach_topic></plugin>
+    </model>
+
+    <gui fullscreen="0">
+      <plugin filename="MinimalScene" name="3D View">
+        <gz-gui><title>Robot Arm Table Setting</title><property type="bool" key="showTitleBar">false</property><property type="string" key="state">docked</property></gz-gui>
+        <engine>ogre</engine><scene>scene</scene><ambient_light>0.58 0.58 0.58</ambient_light><background_color>0.80 0.87 0.94</background_color><camera_pose>2.9 -3.25 2.65 0 0.42 2.25</camera_pose>
+      </plugin>
+      <plugin filename="GzSceneManager" name="Scene Manager"><gz-gui><property type="bool" key="resizable">false</property><property type="double" key="width">5</property><property type="double" key="height">5</property><property type="string" key="state">floating</property><property type="bool" key="showTitleBar">false</property></gz-gui></plugin>
+      <plugin filename="InteractiveViewControl" name="Interactive view control"><gz-gui><property type="bool" key="resizable">false</property><property type="double" key="width">5</property><property type="double" key="height">5</property><property type="string" key="state">floating</property><property type="bool" key="showTitleBar">false</property></gz-gui></plugin>
+      <plugin filename="CameraTracking" name="Camera Tracking"><gz-gui><property type="bool" key="resizable">false</property><property type="double" key="width">5</property><property type="double" key="height">5</property><property type="string" key="state">floating</property><property type="bool" key="showTitleBar">false</property></gz-gui></plugin>
+      <plugin filename="MarkerManager" name="Marker manager"><gz-gui><property type="bool" key="resizable">false</property><property type="double" key="width">5</property><property type="double" key="height">5</property><property type="string" key="state">floating</property><property type="bool" key="showTitleBar">false</property></gz-gui></plugin>
+      <plugin filename="SelectEntities" name="Select entities"><gz-gui><property type="bool" key="resizable">false</property><property type="double" key="width">5</property><property type="double" key="height">5</property><property type="string" key="state">floating</property><property type="bool" key="showTitleBar">false</property></gz-gui></plugin>
+      <plugin filename="WorldControl" name="World control"><gz-gui><property type="bool" key="showTitleBar">false</property><property type="bool" key="resizable">false</property><property type="double" key="height">72</property><property type="double" key="width">121</property><property type="string" key="state">floating</property><anchors target="3D View"><line own="left" target="left"/><line own="bottom" target="bottom"/></anchors></gz-gui><play_pause>true</play_pause><step>true</step><start_paused>true</start_paused></plugin>
+      <plugin filename="WorldStats" name="World stats"><gz-gui><property type="bool" key="showTitleBar">false</property><property type="bool" key="resizable">false</property><property type="double" key="height">110</property><property type="double" key="width">290</property><property type="string" key="state">floating</property><anchors target="3D View"><line own="right" target="right"/><line own="bottom" target="bottom"/></anchors></gz-gui><sim_time>true</sim_time><real_time>true</real_time><real_time_factor>true</real_time_factor></plugin>
+    </gui>
+  </world>
+</sdf>

@@ -1,0 +1,155 @@
+world_frame: world
+
+# Camera RGB zenitale e parametri della pipeline CV/ML. Le coordinate degli
+# oggetti NON sono usate dal detector: servono soltanto al controller come pose
+# di ripristino per il comando clean table e come dimensioni del modello noto.
+vision:
+  image_topic: /table_setting/camera/image
+  debug_topic: /table_setting/vision/debug_image
+  camera: {x: -0.70, y: 0.0, z: 2.45, width: 640, height: 480, horizontal_fov: 1.0}
+  source_roi: {x_min: -1.25, x_max: -0.15, y_min: -0.70, y_max: 0.70}
+  destination_image_topic: /table_setting/destination_camera/image
+  destination_debug_topic: /table_setting/vision/destination_debug_image
+  destination_camera: {x: 0.70, y: 0.0, z: 2.45, width: 640, height: 480, horizontal_fov: 1.0}
+  destination_roi: {x_min: 0.27, x_max: 1.13, y_min: -0.50, y_max: 0.50}
+  table_plane_z: 0.75
+  background_distance: 32.0
+  min_component_area: 45.0
+  expected_objects: 7
+  expected_components: 10
+  stable_frames: 3
+  # Oggetti aggiuntivi riconosciuti dalla CV e selezionabili nei comandi liberi.
+  distractors:
+    bottle:
+      label: bottle
+      pose: {x: -0.34, y: -0.30, z: 0.825}
+      size: {x: 0.08, y: 0.08, z: 0.15}
+      grasp_width: 0.08
+      pick_surface_z: 0.900
+    bowl:
+      label: bowl
+      pose: {x: -0.63, y: -0.30, z: 0.790}
+      size: {x: 0.15, y: 0.15, z: 0.08}
+      grasp_width: 0.15
+      pick_surface_z: 0.830
+    napkin:
+      label: napkin
+      pose: {x: -0.90, y: -0.30, z: 0.756}
+      size: {x: 0.12, y: 0.12, z: 0.012}
+      grasp_width: 0.12
+      pick_surface_z: 0.762
+
+tables:
+  top_z: 0.75
+  source_center: {x: -0.70, y: 0.0}
+  destination_center: {x: 0.70, y: 0.0}
+
+robot:
+  base: {x: 0.0, y: 0.55, shoulder_z: 1.05}
+  upper_arm_length: 0.68
+  forearm_length: 0.62
+  wrist_to_grip: 0.16
+  # 1.22 m remains above every object but is reachable even when camera noise
+  # shifts the bottle a few centimetres towards the far edge.
+  safe_palm_z: 1.22
+  grasp_clearance: 0.11
+  release_clearance: 0.008
+  open_finger: 0.11
+  # Posizione di riposo: braccio sollevato e ruotato verso +Y, lontano dai tavoli.
+  home_joints:
+    base_yaw: 1.5708
+    shoulder_pitch: -1.25
+    elbow_pitch: 0.55
+    wrist_pitch: 2.2708
+    gripper_roll: 0.0
+  joint_limits:
+    base_yaw: [-3.14, 3.14]
+    shoulder_pitch: [-1.80, 1.20]
+    elbow_pitch: [0.05, 2.75]
+    wrist_pitch: [-2.90, 2.90]
+    gripper_roll: [-3.14, 3.14]
+
+# I sette oggetti delle ricette iniziano sul tavolo di sinistra. Insieme ai tre
+# oggetti aggiuntivi sopra, le pose sono fisse, separate e raggiungibili.
+objects:
+  glass:
+    label: glass
+    pose: {x: -1.00, y: 0.00, z: 0.825}
+    size: {x: 0.075, y: 0.075, z: 0.15}
+    grasp_width: 0.075
+    pick_surface_z: 0.900
+  wine_glass:
+    label: wine_glass
+    pose: {x: -0.68, y: 0.00, z: 0.860}
+    size: {x: 0.09, y: 0.09, z: 0.22}
+    grasp_width: 0.09
+    pick_surface_z: 0.970
+  plate:
+    label: plate
+    pose: {x: -0.70, y: 0.26, z: 0.765}
+    size: {x: 0.22, y: 0.22, z: 0.03}
+    # Collision proxy and grasp width are 20 cm while the visible rim is 22 cm:
+    # the fingers visibly close around the rim without pushing the plate away.
+    grasp_width: 0.20
+    pick_surface_z: 0.780
+  cup:
+    label: cup
+    pose: {x: -0.36, y: 0.00, z: 0.810}
+    size: {x: 0.14, y: 0.12, z: 0.12}
+    grasp_width: 0.11
+    pick_surface_z: 0.870
+  spoon:
+    label: spoon
+    pose: {x: -0.44, y: 0.50, z: 0.765}
+    size: {x: 0.18, y: 0.045, z: 0.03}
+    grasp_width: 0.018
+    pick_surface_z: 0.780
+  fork:
+    label: fork
+    pose: {x: -0.74, y: 0.50, z: 0.765}
+    size: {x: 0.19, y: 0.045, z: 0.03}
+    grasp_width: 0.018
+    pick_surface_z: 0.780
+  knife:
+    label: knife
+    pose: {x: -1.06, y: 0.50, z: 0.765}
+    size: {x: 0.20, y: 0.035, z: 0.03}
+    grasp_width: 0.035
+    pick_surface_z: 0.780
+
+# Mise en place vista dal commensale, seduto sulla sedia nel bordo +X e rivolto
+# verso il tavolo in direzione -X:
+# - piatto al centro;
+# - forchetta alla sua sinistra (-Y);
+# - coltello e cucchiaio alla sua destra (+Y);
+# - bicchiere / tazza in alto a destra, quindi verso -X e +Y.
+# Le teste delle posate sono sul loro asse locale -X. yaw=0 le rivolge verso
+# l'interno del tavolo e verso i bicchieri, lasciando i manici verso la sedia.
+destination_slots:
+  plate:      {x: 0.70, y: 0.00, surface_z: 0.760, yaw: 0.0}
+  cup:        {x: 0.45, y: 0.20, surface_z: 0.760, yaw: 1.5708}
+  fork:       {x: 0.70, y: -0.25, surface_z: 0.760, yaw: 0.0}
+  knife:      {x: 0.70, y: 0.25, surface_z: 0.760, yaw: 0.0}
+  spoon:      {x: 0.70, y: 0.25, surface_z: 0.760, yaw: 0.0}
+  glass:      {x: 0.45, y: 0.20, surface_z: 0.760, yaw: 0.0}
+  wine_glass: {x: 0.45, y: 0.20, surface_z: 0.760, yaw: 0.0}
+
+# Quando l'input è una lista di oggetti si usano questi slot individuali.
+# Sono tutti distinti: anche selezionando tutti e dieci gli oggetti non ci sono
+# sovrapposizioni. I tre pasti continuano invece a usare destination_slots.
+custom_destination_slots:
+  glass:      {x: 0.43, y: 0.00, surface_z: 0.760, yaw: 0.0}
+  wine_glass: {x: 0.93, y: 0.18, surface_z: 0.760, yaw: 0.0}
+  plate:      {x: 0.70, y: 0.00, surface_z: 0.760, yaw: 0.0}
+  cup:        {x: 0.43, y: 0.20, surface_z: 0.760, yaw: 1.5708}
+  spoon:      {x: 0.70, y: 0.42, surface_z: 0.760, yaw: 0.0}
+  fork:       {x: 0.70, y: -0.30, surface_z: 0.760, yaw: 0.0}
+  knife:      {x: 0.70, y: 0.25, surface_z: 0.760, yaw: 0.0}
+  bottle:     {x: 0.96, y: -0.18, surface_z: 0.760, yaw: 0.0}
+  bowl:       {x: 0.44, y: -0.20, surface_z: 0.760, yaw: 0.0}
+  napkin:     {x: 0.98, y: 0.00, surface_z: 0.760, yaw: 0.0}
+
+recipes:
+  breakfast: [plate, cup, spoon]
+  lunch: [plate, fork, glass]
+  dinner: [plate, fork, knife, wine_glass]
